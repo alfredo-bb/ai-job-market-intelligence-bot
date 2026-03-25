@@ -1,0 +1,77 @@
+import psycopg2
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+def get_connection():
+    return psycopg2.connect(
+        host=os.getenv("DB_HOST"),
+        port=os.getenv("DB_PORT"),
+        dbname=os.getenv("DB_NAME"),
+        user=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD")
+    )
+
+def guardar_oferta(datos: dict, descripcion: str, url: str = None, fuente: str = None):
+    conn = get_connection()
+    cur = conn.cursor()
+
+    # Insertar oferta principal
+    cur.execute("""
+        INSERT INTO ofertas (puesto, descripcion, salario, experiencia_anos, remoto, url, fuente, ciudad, pais)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
+        RETURNING id
+    """, (
+        datos.get("puesto"),
+        descripcion,
+        datos.get("salario"),
+        datos.get("experiencia_anos"),
+        datos.get("remoto"),
+        url,
+        fuente
+    ))
+
+    oferta_id = cur.fetchone()[0]
+
+    # Insertar skills
+    categorias = {
+        "lenguajes": datos.get("lenguajes", []),
+        "herramientas_datos": datos.get("herramientas_datos", []),
+        "cloud": datos.get("cloud", []),
+        "ia_ml": datos.get("ia_ml", [])
+    }
+
+    for categoria, skills in categorias.items():
+        for skill in skills:
+            cur.execute("""
+                INSERT INTO skills_oferta (oferta_id, skill, categoria)
+                VALUES (%s, %s, %s)
+            """, (oferta_id, skill, categoria))
+
+    conn.commit()
+    cur.close()
+    conn.close()
+    print(f"✅ Oferta guardada con ID: {oferta_id}")
+    return oferta_id
+
+
+# TEST
+if __name__ == "__main__":
+    datos_prueba = {
+        "puesto": "Data Engineer",
+        "lenguajes": ["Python", "SQL"],
+        "herramientas_datos": ["dbt", "Airflow", "Snowflake"],
+        "cloud": ["AWS"],
+        "ia_ml": ["LangChain"],
+        "salario": "40.000 - 55.000€",
+        "experiencia_anos": 3,
+        "remoto": True
+    }
+
+    guardar_oferta(
+        datos=datos_prueba,
+        descripcion="Oferta de prueba",
+        url="https://linkedin.com/test",
+        fuente="linkedin"
+    )
