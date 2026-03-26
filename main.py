@@ -1,5 +1,6 @@
 from processor.analizador import analizar_oferta
-from database.db import guardar_oferta
+from database.db import guardar_oferta, get_connection
+from bot.telegram_bot import enviar_resumen
 
 def procesar_oferta(texto: str, url: str = None, fuente: str = None):
     print("🔍 Analizando oferta...")
@@ -9,6 +10,37 @@ def procesar_oferta(texto: str, url: str = None, fuente: str = None):
     oferta_id = guardar_oferta(datos, texto, url, fuente)
     
     return oferta_id
+
+def obtener_skills_top():
+    # Lee los skills más demandados de Neon
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT skill, COUNT(*) as total_ofertas
+            FROM skills_oferta
+            GROUP BY skill
+            ORDER BY total_ofertas DESC
+            LIMIT 5
+        """)
+        rows = cur.fetchall()
+        return [{"skill": row[0], "total_ofertas": row[1]} for row in rows]
+    finally:
+        cur.close()
+        conn.close()
+
+def obtener_total_ofertas_hoy():
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT COUNT(*) FROM ofertas
+            WHERE fecha_extraccion = CURRENT_DATE
+        """)
+        return cur.fetchone()[0]
+    finally:
+        cur.close()
+        conn.close()
 
 
 # TEST
@@ -25,3 +57,8 @@ if __name__ == "__main__":
         url="https://linkedin.com/jobs/test",
         fuente="linkedin"
     )
+
+    # Enviar resumen por Telegram con datos reales de Neon
+    skills_top = obtener_skills_top()
+    total_hoy = obtener_total_ofertas_hoy()
+    enviar_resumen(total_ofertas=total_hoy, skills_top=skills_top)
