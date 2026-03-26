@@ -25,7 +25,7 @@ def guardar_oferta(datos: dict, descripcion: str, url: str = None, fuente: str =
     # Insertar oferta principal
     cur.execute("""
         INSERT INTO ofertas (puesto, descripcion, salario, experiencia_anos, remoto, url, fuente, ciudad, pais)
-        VALUES (%s, %s, %s, %s, %s, %s, %s)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
         RETURNING id
     """, (
         datos.get("puesto"),
@@ -34,7 +34,9 @@ def guardar_oferta(datos: dict, descripcion: str, url: str = None, fuente: str =
         datos.get("experiencia_anos"),
         datos.get("remoto"),
         url,
-        fuente
+        fuente,
+        datos.get("ciudad"),
+        datos.get("pais")
     ))
 
     oferta_id = cur.fetchone()[0]
