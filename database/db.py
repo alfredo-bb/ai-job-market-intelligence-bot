@@ -20,48 +20,56 @@ def get_connection():
 
 def guardar_oferta(datos: dict, descripcion: str, url: str = None, fuente: str = None):
     conn = get_connection()
-    cur = conn.cursor()
+    try:
+        cur = conn.cursor()
 
-    # Insertar oferta principal
-    cur.execute("""
-        INSERT INTO ofertas (puesto, descripcion, salario, experiencia_anos, remoto, url, fuente, ciudad, pais)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-        RETURNING id
-    """, (
-        datos.get("puesto"),
-        descripcion,
-        datos.get("salario"),
-        datos.get("experiencia_anos"),
-        datos.get("remoto"),
-        url,
-        fuente,
-        datos.get("ciudad"),
-        datos.get("pais")
-    ))
+        # Insertar oferta principal
+        cur.execute("""
+            INSERT INTO ofertas (puesto, descripcion, salario, experiencia_anos, remoto, url, fuente, ciudad, pais)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            RETURNING id
+        """, (
+            datos.get("puesto"),
+            descripcion,
+            datos.get("salario"),
+            datos.get("experiencia_anos"),
+            datos.get("remoto"),
+            url,
+            fuente,
+            datos.get("ciudad"),
+            datos.get("pais")
+        ))
 
-    oferta_id = cur.fetchone()[0]
+        oferta_id = cur.fetchone()[0]
 
-    # Insertar skills
-    categorias = {
-        "lenguajes": datos.get("lenguajes", []),
-        "herramientas_datos": datos.get("herramientas_datos", []),
-        "cloud": datos.get("cloud", []),
-        "ia_ml": datos.get("ia_ml", [])
-    }
+        # Insertar skills
+        categorias = {
+            "lenguajes": datos.get("lenguajes", []),
+            "herramientas_datos": datos.get("herramientas_datos", []),
+            "cloud": datos.get("cloud", []),
+            "ia_ml": datos.get("ia_ml", [])
+        }
 
-    for categoria, skills in categorias.items():
-        for skill in skills:
-            cur.execute("""
-                INSERT INTO skills_oferta (oferta_id, skill, categoria)
-                VALUES (%s, %s, %s)
-            """, (oferta_id, skill, categoria))
+        for categoria, skills in categorias.items():
+            for skill in skills:
+                cur.execute("""
+                    INSERT INTO skills_oferta (oferta_id, skill, categoria)
+                    VALUES (%s, %s, %s)
+                """, (oferta_id, skill, categoria))
 
-    conn.commit()
-    cur.close()
-    conn.close()
-    print(f"✅ Oferta guardada con ID: {oferta_id}")
-    return oferta_id
-
+        conn.commit()
+        cur.close()
+        conn.close()
+        print(f"✅ Oferta guardada con ID: {oferta_id}")
+        return oferta_id
+    
+    except Exception as e:
+        conn.rollback()  # Si algo falla, deshace los cambios
+        print(f"❌ Error guardando oferta: {e}")
+        raise
+    finally:
+        cur.close()
+        conn.close()  # Siempre se cierra, pase lo que pase
 
 # TEST
 if __name__ == "__main__":

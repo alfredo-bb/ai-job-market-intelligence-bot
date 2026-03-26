@@ -24,7 +24,9 @@ def analizar_oferta(texto_oferta: str) -> dict:
         "ia_ml": ["LangChain", "PyTorch"],
         "salario": "rango si aparece, si no null",
         "experiencia_anos": "años requeridos si aparece, si no null",
-        "remoto": true/false
+        "remoto": true/false,
+        "ciudad": "ciudad si aparece, si no null",
+        "pais": "país si aparece, si no null"
     }}
     """
 
