@@ -22,11 +22,10 @@ def guardar_oferta(datos: dict, descripcion: str, url: str = None, fuente: str =
     conn = get_connection()
     try:
         cur = conn.cursor()
-
-        # Insertar oferta principal
         cur.execute("""
             INSERT INTO ofertas (puesto, descripcion, salario, experiencia_anos, remoto, url, fuente, ciudad, pais)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (url) DO NOTHING  -- Si la URL ya existe, ignora
             RETURNING id
         """, (
             datos.get("puesto"),
@@ -40,9 +39,14 @@ def guardar_oferta(datos: dict, descripcion: str, url: str = None, fuente: str =
             datos.get("pais")
         ))
 
-        oferta_id = cur.fetchone()[0]
+        resultado = cur.fetchone()
+        if resultado is None:
+            print(f"⚠️ Oferta duplicada, ignorada: {url}")
+            return None
+        
+        oferta_id = resultado[0]
 
-        # Insertar skills por categorias
+        # Insertar skills por categoría
         categorias = {
             "lenguajes": datos.get("lenguajes", []),
             "herramientas_datos": datos.get("herramientas_datos", []),
@@ -60,7 +64,7 @@ def guardar_oferta(datos: dict, descripcion: str, url: str = None, fuente: str =
         conn.commit()
         print(f"✅ Oferta guardada con ID: {oferta_id}")
         return oferta_id
-    
+
     except Exception as e:
         conn.rollback()  # Si algo falla, deshace los cambios
         print(f"❌ Error guardando oferta: {e}")
