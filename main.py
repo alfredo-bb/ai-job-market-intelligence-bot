@@ -1,6 +1,6 @@
 from processor.analizador import analizar_oferta
 from database.db import guardar_oferta, get_connection
-from bot.telegram_bot import enviar_resumen
+from notificador.telegram import TelegramNotificador
 
 def procesar_oferta(texto: str, url: str = None, fuente: str = None):
     print("🔍 Analizando oferta...")
@@ -61,4 +61,5 @@ if __name__ == "__main__":
     # Enviar resumen por Telegram con datos reales de Neon
     skills_top = obtener_skills_top()
     total_hoy = obtener_total_ofertas_hoy()
-    enviar_resumen(total_ofertas=total_hoy, skills_top=skills_top)
+    notificador = TelegramNotificador()
+    notificador.enviar_resumen(total_ofertas=total_hoy, skills_top=skills_top)
