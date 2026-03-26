@@ -42,7 +42,7 @@ def guardar_oferta(datos: dict, descripcion: str, url: str = None, fuente: str =
 
         oferta_id = cur.fetchone()[0]
 
-        # Insertar skills
+        # Insertar skills por categorias
         categorias = {
             "lenguajes": datos.get("lenguajes", []),
             "herramientas_datos": datos.get("herramientas_datos", []),
@@ -58,8 +58,6 @@ def guardar_oferta(datos: dict, descripcion: str, url: str = None, fuente: str =
                 """, (oferta_id, skill, categoria))
 
         conn.commit()
-        cur.close()
-        conn.close()
         print(f"✅ Oferta guardada con ID: {oferta_id}")
         return oferta_id
     
