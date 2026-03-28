@@ -1,6 +1,7 @@
 from processor.analizador import analizar_oferta
 from database.db import guardar_oferta, get_connection
 from notificador.telegram import TelegramNotificador
+from scraper.rss_scraper import obtener_todas_las_ofertas
 
 def procesar_oferta(texto: str, url: str = None, fuente: str = None):
     print("🔍 Analizando oferta...")
@@ -12,7 +13,6 @@ def procesar_oferta(texto: str, url: str = None, fuente: str = None):
     return oferta_id
 
 def obtener_skills_top():
-    # Lee los skills más demandados de Neon
     conn = get_connection()
     try:
         cur = conn.cursor()
@@ -43,22 +43,30 @@ def obtener_total_ofertas_hoy():
         conn.close()
 
 
-# TEST
 if __name__ == "__main__":
-    oferta_prueba = """
-    Buscamos Data Engineer con experiencia en Python y SQL.
-    Trabajarás con Airflow, dbt y Snowflake en un entorno cloud AWS.
-    Se valora experiencia con LangChain y modelos LLM.
-    Salario: 40.000 - 55.000€. Trabajo remoto. 3 años de experiencia.
-    """
+    # Obtener ofertas reales del RSS
+    print("📡 Obteniendo ofertas de los feeds RSS...")
+    ofertas = obtener_todas_las_ofertas()
+    print(f"🎯 {len(ofertas)} ofertas encontradas")
 
-    procesar_oferta(
-        texto=oferta_prueba,
-        url="https://linkedin.com/jobs/test",
-        fuente="linkedin"
-    )
+    # Procesar cada oferta
+    procesadas = 0
+    duplicadas = 0
+    for oferta in ofertas:
+        resultado = procesar_oferta(
+            texto=oferta["descripcion"],
+            url=oferta["url"],
+            fuente=oferta["fuente"]
+        )
+        if resultado:
+            procesadas += 1
+        else:
+            duplicadas += 1
 
-    # Enviar resumen por Telegram con datos reales de Neon
+    print(f"\n✅ Procesadas: {procesadas}")
+    print(f"⚠️ Duplicadas ignoradas: {duplicadas}")
+
+    # Enviar resumen por Telegram
     skills_top = obtener_skills_top()
     total_hoy = obtener_total_ofertas_hoy()
     notificador = TelegramNotificador()

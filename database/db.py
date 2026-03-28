@@ -17,7 +17,20 @@ def get_connection():
             user=os.getenv("DB_USER"),
             password=os.getenv("DB_PASSWORD")
         )
-
+    
+def limpiar_experiencia(valor) -> int:
+    """Convierte valores como '3-8' o '3+' a un entero, si no puede devuelve None"""
+    if valor is None:
+        return None
+    try:
+        return int(valor)
+    except (ValueError, TypeError):
+        # Si es un rango como "3-8", coge el primer número
+        try:
+            return int(str(valor).split("-")[0].strip().replace("+", ""))
+        except:
+            return None
+        
 def guardar_oferta(datos: dict, descripcion: str, url: str = None, fuente: str = None):
     conn = get_connection()
     try:
@@ -31,7 +44,7 @@ def guardar_oferta(datos: dict, descripcion: str, url: str = None, fuente: str =
             datos.get("puesto"),
             descripcion,
             datos.get("salario"),
-            datos.get("experiencia_anos"),
+            limpiar_experiencia(datos.get("experiencia_anos")),
             datos.get("remoto"),
             url,
             fuente,
@@ -48,10 +61,10 @@ def guardar_oferta(datos: dict, descripcion: str, url: str = None, fuente: str =
 
         # Insertar skills por categoría
         categorias = {
-            "lenguajes": datos.get("lenguajes", []),
-            "herramientas_datos": datos.get("herramientas_datos", []),
-            "cloud": datos.get("cloud", []),
-            "ia_ml": datos.get("ia_ml", [])
+            "lenguajes": datos.get("lenguajes") or [],
+            "herramientas_datos": datos.get("herramientas_datos") or [],
+            "cloud": datos.get("cloud") or [],
+            "ia_ml": datos.get("ia_ml") or []
         }
 
         for categoria, skills in categorias.items():
