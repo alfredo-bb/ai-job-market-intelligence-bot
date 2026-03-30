@@ -18,20 +18,40 @@ class TelegramNotificador(Notificador):
         bot = telegram.Bot(token=self.token)
         await bot.send_message(chat_id=self.chat_id, text=texto, parse_mode="HTML")
     
-    def enviar_resumen(self, total_ofertas: int, skills_top: list):
-        skills_texto = "\n".join([
-            f"  {i+1}. <b>{s['skill']}</b> → {s['total_ofertas']} ofertas"
-            for i, s in enumerate(skills_top[:5])
-        ])
+    def enviar_resumen(self, datos_españa: dict, datos_internacional: dict):
+        
+        def formatear_skills(skills: list) -> str:
+            return "\n".join([
+                f"  {i+1}. <b>{s['skill']}</b> → {s['total_ofertas']} ofertas"
+                for i, s in enumerate(skills[:5])
+            ])
+        
+        def formatear_salarios(salarios: list) -> str:
+            if not salarios:
+                return "  Sin datos suficientes"
+            return "\n".join([
+                f"  {i+1}. <b>{s['skill']}</b> → {s['salario']}"
+                for i, s in enumerate(salarios[:3])
+            ])
         
         mensaje = f"""
 🤖 <b>Job Market Intelligence - Resumen Diario</b>
 
-📊 Ofertas analizadas hoy: <b>{total_ofertas}</b>
+🇪🇸 <b>MERCADO ESPAÑA</b>
+📊 Ofertas hoy: <b>{datos_españa['total_ofertas']}</b>
+🔥 Top Skills:
+{formatear_skills(datos_españa['skills'])}
+💰 Skills mejor pagados:
+{formatear_salarios(datos_españa['salarios'])}
 
-🔥 <b>Top 5 Skills más demandados:</b>
-{skills_texto}
+🌍 <b>MERCADO INTERNACIONAL</b>
+📊 Ofertas hoy: <b>{datos_internacional['total_ofertas']}</b>
+🔥 Top Skills:
+{formatear_skills(datos_internacional['skills'])}
+💰 Skills mejor pagados:
+{formatear_salarios(datos_internacional['salarios'])}
         """
+        
         asyncio.run(self._enviar(mensaje))
     
     def enviar_alerta(self, mensaje: str):

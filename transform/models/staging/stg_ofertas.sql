@@ -10,6 +10,7 @@ SELECT
     LOWER(TRIM(fuente))      AS fuente,
     LOWER(TRIM(ciudad))      AS ciudad,      -- ciudad de la oferta
     LOWER(TRIM(pais))        AS pais,        -- país de la oferta
+    LOWER(TRIM(mercado))        AS mercado,     -- españa o internacional
     descripcion,
     salario,
     CASE

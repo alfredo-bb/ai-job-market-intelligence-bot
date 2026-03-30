@@ -6,9 +6,18 @@ import os
 
 # URLs de los feeds RSS que vamos a consumir
 FEEDS = {
+    # Mercado Internacional
     "remoteok": "https://remoteok.com/remote-jobs.rss",
-    "weworkremotely": "https://weworkremotely.com/categories/remote-programming-jobs.rss"
+    "weworkremotely": "https://weworkremotely.com/categories/remote-programming-jobs.rss",
+    # Mercado España
+    "infojobs_data_engineer": "https://www.infojobs.net/jobsearch/search-results/list.xhtml?keyword=data+engineer&rss=true",
+    "infojobs_data_scientist": "https://www.infojobs.net/jobsearch/search-results/list.xhtml?keyword=data+scientist&rss=true",
+    "infojobs_data_analyst": "https://www.infojobs.net/jobsearch/search-results/list.xhtml?keyword=data+analyst&rss=true",
 }
+
+# Clasificación de fuentes por mercado
+MERCADO_ESPAÑA = ["infojobs_data_engineer", "infojobs_data_scientist", "infojobs_data_analyst"]
+MERCADO_INTERNACIONAL = ["remoteok", "weworkremotely"]
 
 KEYWORDS_OBLIGATORIAS = [
     # Inglés
@@ -56,6 +65,9 @@ def es_oferta_relevante(titulo: str, descripcion: str) -> bool:
 def extraer_ofertas(fuente: str, url: str) -> list:
     """Extrae ofertas de un feed RSS"""
     print(f"📡 Leyendo feed de {fuente}...")
+
+    # Determina el mercado según la fuente
+    mercado = "españa" if fuente in MERCADO_ESPAÑA else "internacional"
     
     feed = feedparser.parse(url)
     ofertas = []
@@ -74,7 +86,8 @@ def extraer_ofertas(fuente: str, url: str) -> list:
             "titulo": titulo,
             "descripcion": descripcion,
             "url": link,
-            "fuente": fuente
+            "fuente": fuente,
+            "mercado": mercado  
         })
         print(f"✅ Encontrada: {titulo}")
     

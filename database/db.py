@@ -31,13 +31,13 @@ def limpiar_experiencia(valor) -> int:
         except:
             return None
         
-def guardar_oferta(datos: dict, descripcion: str, url: str = None, fuente: str = None):
+def guardar_oferta(datos: dict, descripcion: str, url: str = None, fuente: str = None,  mercado: str = None):
     conn = get_connection()
     try:
         cur = conn.cursor()
         cur.execute("""
-            INSERT INTO ofertas (puesto, descripcion, salario, experiencia_anos, remoto, url, fuente, ciudad, pais)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            INSERT INTO ofertas (puesto, descripcion, salario, experiencia_anos, remoto, url, fuente, ciudad, pais, mercado)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (url) DO NOTHING  -- Si la URL ya existe, ignora
             RETURNING id
         """, (
@@ -49,7 +49,8 @@ def guardar_oferta(datos: dict, descripcion: str, url: str = None, fuente: str =
             url,
             fuente,
             datos.get("ciudad"),
-            datos.get("pais")
+            datos.get("pais"),
+            mercado
         ))
 
         resultado = cur.fetchone()

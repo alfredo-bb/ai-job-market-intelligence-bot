@@ -1,0 +1,6 @@
+transform:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      dsn: "{{ env_var('DATABASE_URL') }}"
