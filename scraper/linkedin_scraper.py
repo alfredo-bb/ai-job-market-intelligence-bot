@@ -1,6 +1,6 @@
 # Scraper de LinkedIn Jobs via SerpApi
 # SerpApi gestiona los bloqueos y anti-detección por nosotros
-from serpapi import GoogleSearch
+from serpapi.google_search import GoogleSearch
 import os
 from dotenv import load_dotenv
 
