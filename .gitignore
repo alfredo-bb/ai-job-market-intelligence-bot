@@ -11,3 +11,9 @@ __pycache__/
 # dbt
 transform/target/
 transform/logs/
+
+# Chromadb
+chroma_db/
+
+# Tests temporales
+test_*.py

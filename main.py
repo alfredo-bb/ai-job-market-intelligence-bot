@@ -3,6 +3,19 @@ from database.db import guardar_oferta, get_connection
 from notificador.telegram import TelegramNotificador
 from scraper.rss_scraper import obtener_todas_las_ofertas
 from scraper.linkedin_scraper import obtener_ofertas_linkedin
+from opentelemetry.instrumentation.anthropic import AnthropicInstrumentor
+from langfuse import Langfuse
+import os
+
+# Inicializar Langfuse
+langfuse = Langfuse(
+    public_key=os.getenv("LANGFUSE_PUBLIC_KEY"),
+    secret_key=os.getenv("LANGFUSE_SECRET_KEY"),
+    host=os.getenv("LANGFUSE_BASE_URL")
+)
+
+# Instrumentar Anthropic automáticamente
+AnthropicInstrumentor().instrument()
 
 def procesar_oferta(texto: str, url: str = None, fuente: str = None, mercado: str = None):
     print("🔍 Analizando oferta...")

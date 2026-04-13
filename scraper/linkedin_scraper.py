@@ -38,6 +38,8 @@ def extraer_ofertas_linkedin(query: str, localizacion: str) -> list:
     resultados = search.get_dict()
     
     ofertas = []
+    mercado = "españa" if localizacion == "Spain" else "internacional"
+    
     for job in resultados.get("jobs_results", []):
         ofertas.append({
             "titulo": job.get("title", ""),
@@ -45,7 +47,8 @@ def extraer_ofertas_linkedin(query: str, localizacion: str) -> list:
             "descripcion": job.get("description", ""),
             "url": job.get("share_link", ""),
             "ubicacion": job.get("location", ""),
-            "fuente": "google_jobs"
+            "fuente": "google_jobs",
+            "mercado": mercado
         })
         print(f"✅ {job.get('title')} - {job.get('company_name')}")
     
@@ -62,11 +65,3 @@ def obtener_ofertas_linkedin() -> list:
     return todas
 
 
-# TEST
-if __name__ == "__main__":
-    ofertas = obtener_ofertas_linkedin()
-    print(f"\n🎯 Total ofertas LinkedIn: {len(ofertas)}")
-    for o in ofertas[:3]:
-        print(f"\n--- {o['titulo']} ---")
-        print(f"Empresa: {o['empresa']}")
-        print(f"Ubicación: {o['ubicacion']}")

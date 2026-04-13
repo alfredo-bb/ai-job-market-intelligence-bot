@@ -87,22 +87,111 @@ def guardar_oferta(datos: dict, descripcion: str, url: str = None, fuente: str =
         cur.close()
         conn.close()  # Siempre se cierra, pase lo que pase
 
-# TEST
-if __name__ == "__main__":
-    datos_prueba = {
-        "puesto": "Data Engineer",
-        "lenguajes": ["Python", "SQL"],
-        "herramientas_datos": ["dbt", "Airflow", "Snowflake"],
-        "cloud": ["AWS"],
-        "ia_ml": ["LangChain"],
-        "salario": "40.000 - 55.000€",
-        "experiencia_anos": 3,
-        "remoto": True
-    }
+def cargar_ofertas_de_bbdd(mercado: str = None) -> list:
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        if mercado:
+            cur.execute("""
+                SELECT descripcion, url
+                FROM ofertas
+                WHERE mercado = %s
+            """, (mercado,))
+        else:
+            cur.execute("""
+                SELECT descripcion, url
+                FROM ofertas
+            """)
+        return cur.fetchall()
+    finally:
+        cur.close()
+        conn.close()
 
-    guardar_oferta(
-        datos=datos_prueba,
-        descripcion="Oferta de prueba",
-        url="https://linkedin.com/test",
-        fuente="linkedin"
-    )
+def buscar_skills_demanda(mercado: str = None) -> list:
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        if mercado:
+            cur.execute("""
+                SELECT s.skill, COUNT(*) as total
+                FROM skills_oferta s 
+                JOIN ofertas o ON s.oferta_id = o.id
+                WHERE o.mercado = %s
+                GROUP BY s.skill
+                ORDER BY total DESC
+                LIMIT 5
+            """, (mercado,))
+        else:
+            cur.execute("""
+                SELECT s.skill, COUNT(*) as total
+                FROM skills_oferta s
+                GROUP BY s.skill
+                ORDER BY total DESC
+                LIMIT 5
+            """)
+        return cur.fetchall()
+    finally:
+        cur.close()
+        conn.close()
+
+def buscar_salarios_por_skill(mercado: str = None) -> list:
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        if mercado:
+            cur.execute("""
+                SELECT skill, salario, COUNT(*) as total
+                FROM skills_oferta s JOIN ofertas o
+                ON s.oferta_id = o.id        
+                WHERE o.salario IS NOT NULL AND o.mercado = %s
+                GROUP BY skill, salario
+                ORDER BY total
+                LIMIT 5
+            """, (mercado,))
+        else:
+            cur.execute("""
+                SELECT skill, salario, COUNT(*) as total
+                FROM skills_oferta s JOIN ofertas o
+                ON s.oferta_id = o.id        
+                WHERE o.salario IS NOT NULL 
+                GROUP BY skill, salario
+                ORDER BY total
+                LIMIT 5
+            """)
+            
+        return cur.fetchall()
+    finally:
+        cur.close()
+        conn.close()
+
+def buscar_empresas_top(mercado: str = None) -> list:
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        if mercado:
+            cur.execute("""
+                SELECT fuente, COUNT(*) as total 
+                FROM ofertas
+                WHERE mercado = %s
+                GROUP BY fuente
+                ORDER BY total DESC
+                LIMIT 5
+            """, (mercado,))
+        else:
+            cur.execute("""
+                SELECT fuente, COUNT(*) as total 
+                FROM ofertas
+                GROUP BY fuente
+                ORDER BY total DESC
+                LIMIT 5
+            """)
+
+        return cur.fetchall()
+    finally:
+        cur.close()
+        conn.close()
+
+if __name__ == "__main__":
+    print(buscar_skills_demanda())
+    print(buscar_salarios_por_skill())
+    print(buscar_empresas_top())

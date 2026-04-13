@@ -24,7 +24,7 @@ KEYWORDS_OBLIGATORIAS = [
     "data engineer", "data scientist", "data analyst", "machine learning",
     "ml engineer", "analytics engineer", "python", "llm", "ai engineer",
     "business intelligence", "data platform", "analytics","ai", "nlp",
-    "rag", "gpt"
+    "rag", "gpt",
     
     # Español
     "ingeniero de datos", "científico de datos", "analista de datos",
@@ -69,7 +69,9 @@ def extraer_ofertas(fuente: str, url: str) -> list:
     # Determina el mercado según la fuente
     mercado = "españa" if fuente in MERCADO_ESPAÑA else "internacional"
     
-    feed = feedparser.parse(url)
+    feed = feedparser.parse(url, request_headers={
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+})
     ofertas = []
     
     for entry in feed.entries:
@@ -103,11 +105,3 @@ def obtener_todas_las_ofertas() -> list:
     return todas
 
 
-# TEST
-if __name__ == "__main__":
-    ofertas = obtener_todas_las_ofertas()
-    print(f"\n🎯 Total ofertas encontradas: {len(ofertas)}")
-    for o in ofertas[:3]:  # muestra solo las 3 primeras
-        print(f"\n--- {o['titulo']} ---")
-        print(f"URL: {o['url']}")
-        print(f"Descripción: {o['descripcion'][:200]}...")

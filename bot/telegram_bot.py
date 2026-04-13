@@ -1,41 +1,54 @@
-import telegram
-import asyncio
+import sys
 import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from telegram import Update
+from telegram.ext import Application, MessageHandler, filters, ContextTypes
+from telegram.ext import CommandHandler
+from agente_chat import responder
 from dotenv import load_dotenv
+
 
 load_dotenv()
 
-TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+# Historial por usuario
+historiales = {}
 
-async def enviar_mensaje(texto: str):
-    bot = telegram.Bot(token=TOKEN)
-    await bot.send_message(chat_id=CHAT_ID, text=texto, parse_mode="HTML")
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    mensaje = """👋 *Bienvenido al AI Job Market Intelligence Bot*
 
-def enviar_resumen(total_ofertas: int, skills_top: list):
-    # Construye el mensaje de resumen diario
-    skills_texto = "\n".join([f"  {i+1}. <b>{s['skill']}</b> → {s['total_ofertas']} ofertas" 
-                               for i, s in enumerate(skills_top[:5])])
+Puedo ayudarte con:
+📊 Skills más demandados en el mercado
+💰 Qué tecnologías pagan más
+🔍 Perfiles y requisitos de ofertas reales
+🌍 Dónde buscar trabajo
+🇪🇸 🌍 Ofertas de hoy en el mercado de España/Internacional
+
+¿Qué quieres saber? I also speak English 🇬🇧
+
+_Powered by real job market data + AI_"""
+
+
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    pregunta = update.message.text
     
-    mensaje = f"""
-🤖 <b>Job Market Intelligence - Resumen Diario</b>
-
-📊 Ofertas analizadas hoy: <b>{total_ofertas}</b>
-
-🔥 <b>Top 5 Skills más demandados:</b>
-{skills_texto}
-    """
+    print(f"📩 [{user_id}]: {pregunta}")
     
-    asyncio.run(enviar_mensaje(mensaje))
+    # Obtener o crear historial para este usuario
+    if user_id not in historiales:
+        historiales[user_id] = []
+    
+    # Responder
+    respuesta, historiales[user_id] = responder(pregunta, historiales[user_id])
+    
+    await update.message.reply_text(respuesta, parse_mode="Markdown")
 
+def main():
+    app = Application.builder().token(os.getenv("TELEGRAM_BOT_TOKEN")).build()
+    app.add_handler(CommandHandler("start", start))  
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    app.run_polling()
 
-# TEST
 if __name__ == "__main__":
-    skills_prueba = [
-        {"skill": "python", "total_ofertas": 45},
-        {"skill": "sql", "total_ofertas": 38},
-        {"skill": "aws", "total_ofertas": 22},
-        {"skill": "dbt", "total_ofertas": 18},
-        {"skill": "airflow", "total_ofertas": 15},
-    ]
-    enviar_resumen(total_ofertas=10, skills_top=skills_prueba)
+    main()

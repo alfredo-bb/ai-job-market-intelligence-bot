@@ -46,14 +46,3 @@ def analizar_oferta(texto_oferta: str) -> dict:
     return json.loads(resultado.strip())
 
 
-# TEST - oferta de prueba
-if __name__ == "__main__":
-    oferta_prueba = """
-    Buscamos Data Engineer con experiencia en Python y SQL.
-    Trabajarás con Airflow, dbt y Snowflake en un entorno cloud AWS.
-    Se valora experiencia con LangChain y modelos LLM.
-    Salario: 40.000 - 55.000€. Trabajo remoto. 3 años de experiencia.
-    """
-    
-    resultado = analizar_oferta(oferta_prueba)
-    print(json.dumps(resultado, indent=2, ensure_ascii=False))
