@@ -191,6 +191,81 @@ def buscar_empresas_top(mercado: str = None) -> list:
         cur.close()
         conn.close()
 
+def hay_ofertas_nuevas_hoy() -> bool:
+    """Devuelve True si hay ofertas nuevas respecto a ayer"""
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT COUNT(*) 
+            FROM ofertas 
+            WHERE DATE(fecha_extraccion) = CURRENT_DATE
+            AND url NOT IN (
+                SELECT url FROM ofertas 
+                WHERE DATE(fecha_extraccion) = CURRENT_DATE - INTERVAL '1 day'
+            )
+        """)
+        nuevas = cur.fetchone()[0]
+        print(f"📊 Ofertas nuevas hoy: {nuevas}")
+        return nuevas > 0
+    finally:
+        cur.close()
+        conn.close()
+def obtener_skills_por_mercado(mercado: str) -> list:
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT s.skill, COUNT(*) as total_ofertas
+            FROM skills_oferta s
+            JOIN ofertas o ON s.oferta_id = o.id
+            WHERE o.mercado = %s
+            AND o.fecha_extraccion = CURRENT_DATE
+            GROUP BY s.skill
+            ORDER BY total_ofertas DESC
+            LIMIT 5
+        """, (mercado,))
+        rows = cur.fetchall()
+        return [{"skill": row[0], "total_ofertas": row[1]} for row in rows]
+    finally:
+        cur.close()
+        conn.close()
+
+def obtener_salarios_por_mercado(mercado: str) -> list:
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT s.skill, o.salario, COUNT(*) as total
+            FROM skills_oferta s
+            JOIN ofertas o ON s.oferta_id = o.id
+            WHERE o.mercado = %s
+            AND o.salario IS NOT NULL
+            AND o.fecha_extraccion = CURRENT_DATE
+            GROUP BY s.skill, o.salario
+            ORDER BY total DESC
+            LIMIT 3
+        """, (mercado,))
+        rows = cur.fetchall()
+        return [{"skill": row[0], "salario": row[1]} for row in rows]
+    finally:
+        cur.close()
+        conn.close()
+
+def obtener_total_por_mercado(mercado: str) -> int:
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT COUNT(*) FROM ofertas
+            WHERE mercado = %s
+            AND fecha_extraccion = CURRENT_DATE
+        """, (mercado,))
+        return cur.fetchone()[0]
+    finally:
+        cur.close()
+        conn.close()
+
 if __name__ == "__main__":
     print(buscar_skills_demanda())
     print(buscar_salarios_por_skill())

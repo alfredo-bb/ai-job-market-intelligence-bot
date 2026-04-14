@@ -28,6 +28,8 @@ Puedo ayudarte con:
 
 _Powered by real job market data + AI_"""
 
+    await update.message.reply_text(mensaje, parse_mode="Markdown")
+
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id

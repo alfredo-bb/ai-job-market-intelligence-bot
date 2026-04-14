@@ -1,13 +1,28 @@
-import os
 from anthropic import Anthropic
 from dotenv import load_dotenv
 from database.db import buscar_skills_demanda
 from database.db import buscar_empresas_top
 from database.db import buscar_salarios_por_skill
-from rag import rag_tool, inicializar_coleccion 
+from rag import rag_tool, inicializar_coleccion
+from opentelemetry.instrumentation.anthropic import AnthropicInstrumentor 
+from dotenv import load_dotenv
+import os
+import base64
+
 
 load_dotenv()
 client = Anthropic()
+
+#Inicializa Langfuse
+
+pub = os.getenv("LANGFUSE_PUBLIC_KEY")
+sec = os.getenv("LANGFUSE_SECRET_KEY")
+token = base64.b64encode(f"{pub}:{sec}".encode()).decode()
+
+os.environ["OTEL_EXPORTER_OTLP_ENDPOINT"] = "https://cloud.langfuse.com/api/public/otel"
+os.environ["OTEL_EXPORTER_OTLP_HEADERS"] = f"Authorization=Basic {token}"
+
+AnthropicInstrumentor().instrument()
 
 #Define el prompt
 
@@ -15,6 +30,7 @@ SYSTEM_PROMPT = """Eres un agente especializado en análisis del mercado laboral
                 Tienes acceso a una base de datos real con ofertas de trabajo actuales.
 
                 INSTRUCCIONES CRÍTICAS:
+            
                 - Responde ÚNICAMENTE a lo que el usuario pregunta. No añadas comparaciones no solicitadas.
                 - Elige la tool más específica para cada pregunta:
                     * Preguntas sobre demanda o qué aprender → buscar_skills_demanda
@@ -185,8 +201,15 @@ def responder(pregunta: str, historial: list) -> tuple[str, list]:
     historial.append({"role": "assistant", "content": respuesta})
     return respuesta, historial
 
-
-
+if __name__ == "__main__":
+    historial = []
+    print("🤖 Agente local. Escribe 'salir' para terminar.\n")
+    while True:
+        user_input = input("Tú: ")
+        if user_input.lower() == "salir":
+            break
+        respuesta, historial = responder(user_input, historial)
+        print(f"\nAgente: {respuesta}\n")
 
 
 
