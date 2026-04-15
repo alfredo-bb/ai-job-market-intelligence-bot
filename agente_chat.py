@@ -8,6 +8,7 @@ from opentelemetry.instrumentation.anthropic import AnthropicInstrumentor
 from dotenv import load_dotenv
 import os
 import base64
+from semantic_cache import buscar_en_cache, guardar_en_cache
 
 
 load_dotenv()
@@ -154,7 +155,15 @@ tools_functions = {
 
 def responder(pregunta: str, historial: list) -> tuple[str, list]:
     
-    # 1. Añadir pregunta al historial
+    # 0. Comprobar cache primero
+    respuesta_cacheada = buscar_en_cache(pregunta)
+    if respuesta_cacheada:
+        # 0.1. Añadir pregunta al historial
+        historial.append({"role": "user", "content": pregunta})
+        historial.append({"role": "assistant", "content": respuesta_cacheada})
+        return respuesta_cacheada, historial
+    
+    # 1. Si no hay cache - lógica normal
     historial.append({"role": "user", "content": pregunta})
     
     # 2. Primera llamada
@@ -199,6 +208,10 @@ def responder(pregunta: str, historial: list) -> tuple[str, list]:
     # 5. Guardar respuesta y devolver
     respuesta = response_final.content[0].text
     historial.append({"role": "assistant", "content": respuesta})
+    
+
+    # 6. Guardar respuesta en cache antes de devolver
+    guardar_en_cache(pregunta, respuesta)
     return respuesta, historial
 
 if __name__ == "__main__":
