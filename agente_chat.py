@@ -143,13 +143,13 @@ def buscar_salarios_por_skill_tool(mercado: str = None) -> str:
     except Exception as e:
         return f"Error al consultar la base de datos: {e}"
 
-coleccion_chroma = inicializar_coleccion()
+coleccion_chroma, bm25, documentos = inicializar_coleccion()
 
 tools_functions = {
     "buscar_skills_demanda": buscar_skills_demanda_tool,
     "buscar_empresas_top": buscar_empresas_top_tool,
     "buscar_salarios_por_skill": buscar_salarios_por_skill_tool,
-    "buscar_en_descripciones": lambda pregunta: rag_tool(coleccion_chroma, pregunta)
+    "buscar_en_descripciones": lambda pregunta: rag_tool(coleccion_chroma, bm25, documentos, pregunta)
 }
 
 def responder(pregunta: str, historial: list) -> tuple[str, list]:
