@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 import os
 import base64
 from semantic_cache import buscar_en_cache, guardar_en_cache
-
+from guardrails import es_pregunta_valida
 
 load_dotenv()
 client = Anthropic()
@@ -155,18 +155,25 @@ tools_functions = {
 
 def responder(pregunta: str, historial: list) -> tuple[str, list]:
     
-    # 0. Comprobar cache primero
+    # 0 Guardrail -verificar si la pregunta es válida
+    if not es_pregunta_valida(pregunta):
+        respuesta= "Lo siento, sólo puedo responder preguntas sobre el mercado laboral, empleos, skills y tecnologías."
+        historial.append({"role": "user", "content": pregunta})
+        historial.append({"role": "assistant", "content": pregunta})
+        return respuesta, historial
+    
+    # 1. Comprobar cache primero
     respuesta_cacheada = buscar_en_cache(pregunta)
     if respuesta_cacheada:
-        # 0.1. Añadir pregunta al historial
+        # 1.1. Añadir pregunta al historial
         historial.append({"role": "user", "content": pregunta})
         historial.append({"role": "assistant", "content": respuesta_cacheada})
         return respuesta_cacheada, historial
     
-    # 1. Si no hay cache - lógica normal
+    # 2. Si no hay cache - lógica normal
     historial.append({"role": "user", "content": pregunta})
     
-    # 2. Primera llamada
+    # 3. Primera llamada
     response = client.messages.create(
         model="claude-haiku-4-5-20251001",
         max_tokens=1024,
@@ -175,7 +182,7 @@ def responder(pregunta: str, historial: list) -> tuple[str, list]:
         system=SYSTEM_PROMPT
     )
     
-    # 3. Procesar tools si las hay
+    # 4. Procesar tools si las hay
     historial.append({"role": "assistant", "content": response.content})
     tool_results = []
     for block in response.content:
@@ -193,7 +200,7 @@ def responder(pregunta: str, historial: list) -> tuple[str, list]:
                 "content": resultado
             })
     
-    # 4. Si hubo tools, segunda llamada
+    # 5. Si hubo tools, segunda llamada
     if tool_results:
         historial.append({"role": "user", "content": tool_results})
         response_final = client.messages.create(
@@ -205,12 +212,12 @@ def responder(pregunta: str, historial: list) -> tuple[str, list]:
     else:
         response_final = response
     
-    # 5. Guardar respuesta y devolver
+    # 6. Guardar respuesta y devolver
     respuesta = response_final.content[0].text
     historial.append({"role": "assistant", "content": respuesta})
     
 
-    # 6. Guardar respuesta en cache antes de devolver
+    # 7. Guardar respuesta en cache antes de devolver
     guardar_en_cache(pregunta, respuesta)
     return respuesta, historial
 
