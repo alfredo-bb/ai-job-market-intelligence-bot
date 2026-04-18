@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 import os
 import base64
 from semantic_cache import buscar_en_cache, guardar_en_cache
-from guardrails import es_pregunta_valida
+from guardrails import es_pregunta_valida, detectar_alucinacion
 
 load_dotenv()
 client = Anthropic()
@@ -212,24 +212,38 @@ def responder(pregunta: str, historial: list) -> tuple[str, list]:
     else:
         response_final = response
     
-    # 6. Guardar respuesta y devolver
+    respuesta= response_final.content[0].text
+
+    # 6. Detectar alucinación
+    tool_data = "\n".join([r["content"] for r in tool_results])
+    if detectar_alucinacion(user_input, respuesta, tool_data):
+        respuesta = "No tengo datos suficientes para responder con seguridad."
+    
+    # 7. Guardar respuesta y devolver
     respuesta = response_final.content[0].text
     historial.append({"role": "assistant", "content": respuesta})
+
     
 
-    # 7. Guardar respuesta en cache antes de devolver
+    # 8. Guardar respuesta en cache antes de devolver
     guardar_en_cache(pregunta, respuesta)
     return respuesta, historial
 
 if __name__ == "__main__":
     historial = []
+  
     print("🤖 Agente local. Escribe 'salir' para terminar.\n")
-    while True:
-        user_input = input("Tú: ")
-        if user_input.lower() == "salir":
-            break
-        respuesta, historial = responder(user_input, historial)
-        print(f"\nAgente: {respuesta}\n")
+
+    try:
+        while True:
+            user_input = input("Tú: ")
+            if user_input.lower() == "salir":
+                break
+            respuesta, historial = responder(user_input, historial)
+            print(f"\nAgente: {respuesta}\n")
+    
+    except KeyboardInterrupt:
+        print("\n👋 Hasta luego.")
 
 
 
