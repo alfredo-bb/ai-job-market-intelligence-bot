@@ -214,16 +214,21 @@ def responder(pregunta: str, historial: list) -> tuple[str, list]:
     
     respuesta= response_final.content[0].text
 
-    # 6. Detectar alucinación
+    
+    
+    # 6. Guardar respuesta y devolver
+    respuesta = response_final.content[0].text
+
+    # 7. Detectar alucinación
     tool_data = "\n".join([r["content"] for r in tool_results])
     if detectar_alucinacion(user_input, respuesta, tool_data):
         respuesta = "No tengo datos suficientes para responder con seguridad."
-    
-    # 7. Guardar respuesta y devolver
-    respuesta = response_final.content[0].text
+
     historial.append({"role": "assistant", "content": respuesta})
 
-    
+    # Limitar historial a los últimos 10 mensajes
+    if len(historial) > 10:
+        historial = historial[-10:]
 
     # 8. Guardar respuesta en cache antes de devolver
     guardar_en_cache(pregunta, respuesta)
