@@ -1,37 +1,48 @@
-from sentence_transformers import SentenceTransformer
+import redis
 import numpy as np
+import json
+from sentence_transformers import SentenceTransformer
+
 
 modelo = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2")
 THRESHOLD = 0.75 #similitud mínima para considerar hit
+TTL = 86400  # 24 horas en segundos
 
-cache = [] # lista de pares {embedding, pregunta, respuesta}
+# Conexión a Redis
+r = redis.Redis(host='localhost', port=6379, db=0)
 
 def buscar_en_cache(pregunta: str):
     """Busca si hay una respuesta cacheada para esta pregunta"""
-    if not cache:
-        return None
-    
     embedding_pregunta = modelo.encode(pregunta)
-
-    for entrada in cache:
-        similitud = np.dot(embedding_pregunta, entrada["embedding"]) / (
-            np.linalg.norm(embedding_pregunta) * np.linalg.norm(entrada["embedding"])
-            )
+    
+    # Obtener todas las keys del cache
+    keys = r.keys("cache:*")
+    
+    for key in keys:
+        entrada = json.loads(r.get(key))
+        embedding_guardado = np.array(entrada["embedding"])
+        
+        similitud = np.dot(embedding_pregunta, embedding_guardado) / (
+            np.linalg.norm(embedding_pregunta) * np.linalg.norm(embedding_guardado)
+        )
+        
         if similitud >= THRESHOLD:
             print(f"✅ Cache hit! Similitud: {similitud:.3f}")
             return entrada["respuesta"]
-        
     
-        
     return None
 
 def guardar_en_cache(pregunta: str, respuesta: str):
-    """Guarda una nueva entrada en el cache"""
-    embedding = modelo.encode(pregunta)
-    cache.append({
-        "embedding": embedding,
+    """Guarda una nueva entrada en Redis con TTL"""
+    embedding = modelo.encode(pregunta).tolist()
+    
+    entrada = {
         "pregunta": pregunta,
+        "embedding": embedding,
         "respuesta": respuesta
-    })
-    print(f"💾 Guardado en cache: '{pregunta[:50]}...'")
+    }
+    
+    key = f"cache:{pregunta[:50]}"
+    r.setex(key, TTL, json.dumps(entrada))
+    print(f"💾 Guardado en Redis: '{pregunta[:50]}...'")
 
