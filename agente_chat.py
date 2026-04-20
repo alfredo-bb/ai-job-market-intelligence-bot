@@ -168,6 +168,10 @@ tools_functions = {
 
 def responder(pregunta: str, historial: list) -> tuple[str, list]:
     
+    # Salida especial
+    if pregunta.lower() == "salir":
+        return "👋 ¡Hasta luego!", historial
+
     # 0 Guardrail -verificar si la pregunta es válida
     if not es_pregunta_valida(pregunta):
         respuesta= "Lo siento, sólo puedo responder preguntas sobre el mercado laboral, empleos, skills y tecnologías."
