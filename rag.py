@@ -8,16 +8,22 @@ from rank_bm25 import BM25Okapi
 
 load_dotenv()
 
-modelo = SentenceTransformer("all-MiniLM-L6-v2")
+from modelo_embeddings import modelo
 cliente_chroma = chromadb.Client()
 THRESHOLD = 1.2
 
 def inicializar_coleccion():
     """Carga ofertas de PostgreSQL e indexa en Chroma y BM25"""
-    coleccion = cliente_chroma.create_collection("ofertas_trabajo")
+    coleccion = cliente_chroma.get_or_create_collection("ofertas_trabajo")
     
-    ofertas = cargar_ofertas_de_bbdd()
-    
+    try:
+        print(f"📄 Cargando ofertas de BD...")
+        ofertas = cargar_ofertas_de_bbdd()
+        print(f"📄 {len(ofertas)} ofertas cargadas")
+    except Exception as e:
+        print(f"⚠️ No se pudo conectar a BD: {e}")
+        ofertas=[]
+
     documentos = [o[0] for o in ofertas if o[0]]
     ids = [f"doc_{i}" for i in range(len(documentos))]
     embeddings = modelo.encode(documentos).tolist()

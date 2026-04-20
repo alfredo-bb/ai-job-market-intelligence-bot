@@ -8,7 +8,7 @@ from telegram.ext import CommandHandler
 from agente_chat import responder
 from dotenv import load_dotenv
 
-
+print("🚀 Iniciando telegram_bot.py...")
 load_dotenv()
 
 # Historial por usuario

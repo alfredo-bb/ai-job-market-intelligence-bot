@@ -143,14 +143,27 @@ def buscar_salarios_por_skill_tool(mercado: str = None) -> str:
         return "\n".join(lineas)
     except Exception as e:
         return f"Error al consultar la base de datos: {e}"
+    
 
-coleccion_chroma, bm25, documentos = inicializar_coleccion()
+#Se ejecuta cuando se necesita
+coleccion_chroma = None
+bm25 = None
+documentos = None
+
+def obtener_coleccion():
+    global coleccion_chroma, bm25, documentos
+    if coleccion_chroma is None:
+        print("🔄 Iniciando colección ChromaDB...")
+        coleccion_chroma, bm25, documentos = inicializar_coleccion()
+        print("✅ Colección lista")
+    return coleccion_chroma, bm25, documentos
+
 
 tools_functions = {
     "buscar_skills_demanda": buscar_skills_demanda_tool,
     "buscar_empresas_top": buscar_empresas_top_tool,
     "buscar_salarios_por_skill": buscar_salarios_por_skill_tool,
-    "buscar_en_descripciones": lambda pregunta: rag_tool(coleccion_chroma, bm25, documentos, pregunta)
+    "buscar_en_descripciones": lambda pregunta: rag_tool(*obtener_coleccion(), pregunta)
 }
 
 def responder(pregunta: str, historial: list) -> tuple[str, list]:
@@ -221,7 +234,7 @@ def responder(pregunta: str, historial: list) -> tuple[str, list]:
 
     # 7. Detectar alucinación
     tool_data = "\n".join([r["content"] for r in tool_results])
-    if detectar_alucinacion(user_input, respuesta, tool_data):
+    if detectar_alucinacion(pregunta, respuesta, tool_data):
         respuesta = "No tengo datos suficientes para responder con seguridad."
 
     historial.append({"role": "assistant", "content": respuesta})
@@ -249,8 +262,3 @@ if __name__ == "__main__":
     
     except KeyboardInterrupt:
         print("\n👋 Hasta luego.")
-
-
-
-
-    
