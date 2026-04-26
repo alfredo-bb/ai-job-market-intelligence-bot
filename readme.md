@@ -1,3 +1,12 @@
+![Python](https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=flat&logo=postgresql&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white)
+![Anthropic](https://img.shields.io/badge/Anthropic-Claude-orange?style=flat)
+![LangGraph](https://img.shields.io/badge/LangGraph-Agent-blueviolet?style=flat)
+![Langfuse](https://img.shields.io/badge/Langfuse-Observability-green?style=flat)
+![Redis](https://img.shields.io/badge/Redis-DC382D?style=flat&logo=redis&logoColor=white)
+![Telegram](https://img.shields.io/badge/Telegram-Bot-2CA5E0?style=flat&logo=telegram&logoColor=white)
+
 # 🤖 AI Job Market Intelligence Bot
 
 > End-to-end data pipeline that tracks the AI/Data job market daily, 
@@ -17,19 +26,22 @@
 |-----------|-----------|
 | ELT Pipeline | Python, dbt, PostgreSQL (Neon) |
 | LLM Analysis | Groq (llama-3.3-70b) |
-| Agent & Tools | Anthropic Claude, Tool Calling |
+| Agent & Tools | Anthropic Claude, Tool Calling, Graph, BM25, Semantic Cache
 | RAG | sentence-transformers, ChromaDB |
 | Automation | GitHub Actions |
 | Notifications | Telegram Bot API |
-| Observability | Langfuse |
+| Observability | Langfuse, Guardrails
+| Container | Docker
 
 ## Architecture
 
-![alt text](image.png)
+![Architecture](assets/architecture.jpg)
 
-## Demo
+## Screenshots
 
-[pega aquí las 4 capturas de Telegram]
+![Daily summary](assets/telegram_summary.jpg)
+![Conversational agent](assets/telegram_agent.jpg)
+![Daily summary](assets/telegram_agent2.jpg)
 
 ## How it works
 
@@ -40,6 +52,17 @@ GitHub Actions triggers the scraper → LLM analysis → PostgreSQL storage → 
 The Telegram bot accepts natural language queries and routes them to:
 - **SQL tools** — skills demand, salary data, top platforms
 - **RAG search** — semantic search over real job descriptions
+
+### 3. LangGraph Pipeline
+Conditional edges enable intelligent decisions:
+- Skip processing if no new offers found
+- Alert via Telegram if scraper returns < 10 results
+- Validate offer quality before storing
+
+### 4. Guardrails & Safety
+- Input validation — domain classifier rejects off-topic queries
+- Hallucination detection — verifies responses against real data
+- Semantic cache — Redis persists responses across restarts (TTL 24h)
 
 ## Setup
 
